@@ -25,59 +25,57 @@ json: {
 """
 from flask import request, jsonify
 from config import app, db
-from models import Contact
+from models import Grocery
 
-@app.route("/contacts", methods = ["GET"])  #Decorator specifies where to go to and valid methods
-def get_contacts():
-    contacts = Contact.query.all() #gets all contacts that exist in Contact database
-    json_contacts = list(map(lambda x: x.to_json(), contacts)) #takes all elements in the list and applied lambda function that creates formatted list
-    return jsonify({"contacts": json_contacts}) #jsonify converts into json data
+@app.route("/groceries", methods = ["GET"])  #Decorator specifies where to go to and valid methods
+def get_groceries():
+    groceries = Grocery.query.all() #gets all contacts that exist in Contact database as python object
+    json_groceries = list(map(lambda x: x.to_json(), groceries)) #converts python list to json objects
+    return jsonify({"groceries": json_groceries}) #converts groceries into json data
 
-@app.route("/create_contact", methods = ["POST"])
-def create_contact():
-    first_name = request.json.get("firstName")
-    last_name = request.json.get("lastName")
-    email = request.json.get("email")
+@app.route("/create_grocery", methods = ["POST"])
+def create_grocery():
+    item_name = request.json.get("itemName")
+    amount_needed = request.json.get("amountNeeded")
 
-    if not first_name or not last_name or not email:
-        return jsonify({"message": "You must include a first name, last name, and email."}), 400    #error message, error code
+    if not item_name or not amount_needed:
+        return jsonify({"message": "You must include an item name and amount."}), 400    #error message, error code
     
-    new_contact = Contact(first_name = first_name, last_name=last_name, email = email)
+    new_grocery = Grocery(item_name = item_name, amount_needed=amount_needed)
     try:
-        db.session.add(new_contact) #adds new contact to database session(ready to commit like GitHub)
+        db.session.add(new_grocery) #adds new contact to database session(ready to commit like GitHub)
         db.session.commit() # permanently writes into the database
     except Exception as e:
         return jsonify({"message": str(e)}), 400
     
-    return jsonify({"message": "User created!"}), 201
+    return jsonify({"message": "Grocery created!"}), 201
 
-@app.route("/update_contact/<int:user_id>", methods = ["PATCH"])
-def update_contact(user_id):
-    contact = Contact.query.get(user_id)
+@app.route("/update_grocery/<int:item_id>", methods = ["PATCH"])
+def update_grocery(item_id):
+    grocery = Grocery.query.get(item_id)
     
-    if not contact:
-        return jsonify({"message": "User not found."}), 404
+    if not grocery:
+        return jsonify({"message": "Item not found."}), 404
     
     data = request.json #request.json returns a dictionary
-    contact.first_name = data.get("firstName", contact.first_name) # updates first name
-    contact.last_name = data.get("lastName", contact.last_name)
-    contact.email = data.get("email", contact.email)
+    grocery.item_name = data.get("itemName", grocery.item_name) # updates item name
+    grocery.amount_needed = data.get("amountNeeded", grocery.amount_needed)
 
-    db.session.commit() # do not need to add since user is already committed
+    db.session.commit() # do not need to add anything since item is already committed
 
-    return jsonify({"message": "User updated!"}), 200
+    return jsonify({"message": "Item updated!"}), 200
 
-@app.route("/delete_contact/<user_id>", methods = ["DELETE"])
-def delete_contact(user_id):
-    contact = Contact.query.get(user_id)
+@app.route("/delete_grocery/<int:item_id>", methods = ["DELETE"])
+def delete_grocery(item_id):
+    grocery = Grocery.query.get(item_id)
 
-    if not contact:
-        return jsonify({"message": "User not found."}), 404
+    if not grocery:
+        return jsonify({"message": "Item not found."}), 404
     
-    db.session.delete(contact)
-    db.session.commit()
+    db.session.delete(grocery)  #deletes the grocery
+    db.session.commit()     #commits the changes
 
-    return jsonify({"message": "User Deleted."}), 200
+    return jsonify({"message": "Item Deleted."}), 200
 
 if __name__ == "__main__":
     #Creates a new database if does not exist
